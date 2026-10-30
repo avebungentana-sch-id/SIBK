@@ -1,0 +1,274 @@
+{
+  "entities": {
+    "admin": {
+      "title": "Admin",
+      "description": "Trusted administrator record for access control",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Administrator email address"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role identifier, e.g. superadmin or teacher_bk"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp in ISO 8601 format"
+        }
+      },
+      "required": ["email", "role"]
+    },
+    "school": {
+      "title": "SchoolConfig",
+      "description": "School profile and BK threshold configuration",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "School name",
+          "maxLength": 150
+        },
+        "address": {
+          "type": "string",
+          "description": "School address",
+          "maxLength": 300
+        },
+        "teacher": {
+          "type": "string",
+          "description": "BK teacher or coordinator name",
+          "maxLength": 120
+        },
+        "defaultScore": {
+          "type": "integer",
+          "description": "Starting score for students"
+        },
+        "alertRed": {
+          "type": "integer",
+          "description": "Critical red alert score threshold"
+        },
+        "alertOrange": {
+          "type": "integer",
+          "description": "Warning orange alert score threshold"
+        },
+        "alertYellow": {
+          "type": "integer",
+          "description": "Caution yellow alert score threshold"
+        },
+        "starLimit": {
+          "type": "integer",
+          "description": "Minimum score for star achievement badge"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["name", "teacher", "defaultScore"]
+    },
+    "category": {
+      "title": "PointCategory",
+      "description": "Violation or achievement point category rules",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["punishment", "reward"],
+          "description": "Classification: punishment or reward"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of violation or achievement",
+          "maxLength": 150
+        },
+        "point": {
+          "type": "integer",
+          "description": "Point quantity associated with rule"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp created"
+        }
+      },
+      "required": ["type", "name", "point"]
+    },
+    "student": {
+      "title": "Student",
+      "description": "Student record with basic academic info and cumulative score",
+      "type": "object",
+      "properties": {
+        "nis": {
+          "type": "string",
+          "description": "Student identification number (NIS/NISN)",
+          "maxLength": 50
+        },
+        "name": {
+          "type": "string",
+          "description": "Full student name",
+          "maxLength": 120
+        },
+        "class": {
+          "type": "string",
+          "description": "Class grade or division",
+          "maxLength": 50
+        },
+        "psychInfo": {
+          "type": "string",
+          "description": "Psychological or behavioral notes",
+          "maxLength": 1000
+        },
+        "score": {
+          "type": "integer",
+          "description": "Cumulative BK score"
+        },
+        "photo": {
+          "type": "string",
+          "description": "Base64 or URL profile photo string",
+          "maxLength": 1048576
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp last updated"
+        }
+      },
+      "required": ["name", "class", "score"]
+    },
+    "pointRecord": {
+      "title": "PointRecord",
+      "description": "Individual violation or achievement transaction logged for a student",
+      "type": "object",
+      "properties": {
+        "studentId": {
+          "type": "string",
+          "description": "Target student document ID",
+          "maxLength": 128
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of incident YYYY-MM-DD",
+          "maxLength": 20
+        },
+        "category": {
+          "type": "string",
+          "description": "Violation or achievement category name",
+          "maxLength": 150
+        },
+        "type": {
+          "type": "string",
+          "enum": ["punishment", "reward"],
+          "description": "Type of event"
+        },
+        "point": {
+          "type": "integer",
+          "description": "Point magnitude delta"
+        },
+        "loggedBy": {
+          "type": "string",
+          "description": "UID of teacher/admin who logged"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp created"
+        }
+      },
+      "required": ["date", "category", "type", "point"]
+    },
+    "counselingRecord": {
+      "title": "CounselingRecord",
+      "description": "Counseling session record and follow-up case tracker",
+      "type": "object",
+      "properties": {
+        "studentId": {
+          "type": "string",
+          "description": "Target student ID if linked",
+          "maxLength": 128
+        },
+        "studentName": {
+          "type": "string",
+          "description": "Student full name",
+          "maxLength": 120
+        },
+        "studentClass": {
+          "type": "string",
+          "description": "Student class name",
+          "maxLength": 50
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of session YYYY-MM-DD",
+          "maxLength": 20
+        },
+        "type": {
+          "type": "string",
+          "description": "Service type: Konseling Pribadi, Karir, Belajar, Anecdotal Record, Home Visit, Pemanggilan Orang Tua",
+          "maxLength": 100
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Baru", "Diproses", "Perlu Panggilan Orang Tua", "Monitoring", "Selesai"],
+          "description": "Follow-up case status"
+        },
+        "desc": {
+          "type": "string",
+          "description": "Description of the problem",
+          "maxLength": 3000
+        },
+        "result": {
+          "type": "string",
+          "description": "Counseling outcome result",
+          "maxLength": 3000
+        },
+        "followUp": {
+          "type": "string",
+          "description": "Follow-up action plan",
+          "maxLength": 2000
+        },
+        "followDate": {
+          "type": "string",
+          "description": "Follow-up target date YYYY-MM-DD",
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp updated"
+        }
+      },
+      "required": ["studentName", "date", "type", "status"]
+    }
+  },
+  "firestore": {
+    "/admins/{uid}": {
+      "schema": "admin",
+      "description": "Whitelist of verified administrative accounts"
+    },
+    "/config/{configId}": {
+      "schema": "school",
+      "description": "General application and school configuration documents"
+    },
+    "/categories/{categoryId}": {
+      "schema": "category",
+      "description": "Standardized violations and achievements catalog"
+    },
+    "/students/{studentId}": {
+      "schema": "student",
+      "description": "Student master profiles with aggregate score"
+    },
+    "/students/{studentId}/points/{pointId}": {
+      "schema": "pointRecord",
+      "description": "Historical transactional point incidents for a specific student"
+    },
+    "/counseling/{counselingId}": {
+      "schema": "counselingRecord",
+      "description": "Counseling case logs and follow-up records"
+    }
+  }
+}

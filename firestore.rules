@@ -1,0 +1,166 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Definition & Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerified() && (
+        request.auth.token.email == 'avebungentana@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Entity Validators
+    function isValidAdmin(data) {
+      return data.keys().hasAll(['email', 'role']) &&
+        data.keys().hasOnly(['email', 'role', 'createdAt']) &&
+        data.email is string && data.email.size() <= 150 &&
+        data.role is string && data.role.size() <= 50 &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50));
+    }
+
+    function isValidSchool(data) {
+      return data.keys().hasAll(['name', 'teacher', 'defaultScore']) &&
+        data.keys().hasOnly(['name', 'address', 'teacher', 'defaultScore', 'alertRed', 'alertOrange', 'alertYellow', 'starLimit', 'updatedAt']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.teacher is string && data.teacher.size() > 0 && data.teacher.size() <= 120 &&
+        data.defaultScore is int && data.defaultScore >= 0 && data.defaultScore <= 1000 &&
+        (!('address' in data) || (data.address is string && data.address.size() <= 300)) &&
+        (!('alertRed' in data) || (data.alertRed is int && data.alertRed >= 0)) &&
+        (!('alertOrange' in data) || (data.alertOrange is int && data.alertOrange >= 0)) &&
+        (!('alertYellow' in data) || (data.alertYellow is int && data.alertYellow >= 0)) &&
+        (!('starLimit' in data) || (data.starLimit is int && data.starLimit >= 0)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['type', 'name', 'point']) &&
+        data.keys().hasOnly(['type', 'name', 'point', 'createdAt']) &&
+        (data.type == 'punishment' || data.type == 'reward') &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.point is int && data.point >= 0 && data.point <= 500 &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50));
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'class', 'score']) &&
+        data.keys().hasOnly(['nis', 'name', 'class', 'psychInfo', 'score', 'photo', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
+        data.class is string && data.class.size() > 0 && data.class.size() <= 50 &&
+        data.score is int && data.score >= 0 && data.score <= 1000 &&
+        (!('nis' in data) || (data.nis is string && data.nis.size() <= 50)) &&
+        (!('psychInfo' in data) || (data.psychInfo is string && data.psychInfo.size() <= 2000)) &&
+        (!('photo' in data) || data.photo == null || (data.photo is string && data.photo.size() <= 1048576)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidPoint(data) {
+      return data.keys().hasAll(['date', 'category', 'type', 'point']) &&
+        data.keys().hasOnly(['studentId', 'date', 'category', 'type', 'point', 'loggedBy', 'createdAt']) &&
+        (data.type == 'punishment' || data.type == 'reward') &&
+        data.date is string && data.date.size() <= 20 &&
+        data.category is string && data.category.size() > 0 && data.category.size() <= 150 &&
+        data.point is int && data.point >= 0 && data.point <= 500 &&
+        (!('studentId' in data) || (data.studentId is string && data.studentId.size() <= 128)) &&
+        (!('loggedBy' in data) || (data.loggedBy is string && data.loggedBy.size() <= 128)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50));
+    }
+
+    function isValidCounseling(data) {
+      return data.keys().hasAll(['studentName', 'date', 'type', 'status']) &&
+        data.keys().hasOnly(['studentId', 'studentName', 'studentClass', 'date', 'type', 'status', 'desc', 'result', 'followUp', 'followDate', 'createdAt', 'updatedAt']) &&
+        data.studentName is string && data.studentName.size() > 0 && data.studentName.size() <= 120 &&
+        data.date is string && data.date.size() <= 20 &&
+        data.type is string && data.type.size() <= 100 &&
+        (data.status == 'Baru' || data.status == 'Diproses' || data.status == 'Perlu Panggilan Orang Tua' || data.status == 'Monitoring' || data.status == 'Selesai') &&
+        (!('studentId' in data) || (data.studentId is string && data.studentId.size() <= 128)) &&
+        (!('studentClass' in data) || (data.studentClass is string && data.studentClass.size() <= 50)) &&
+        (!('desc' in data) || (data.desc is string && data.desc.size() <= 3000)) &&
+        (!('result' in data) || (data.result is string && data.result.size() <= 3000)) &&
+        (!('followUp' in data) || (data.followUp is string && data.followUp.size() <= 2000)) &&
+        (!('followDate' in data) || (data.followDate is string && data.followDate.size() <= 20)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    // Admins Collection
+    match /admins/{uid} {
+      allow get: if isVerified();
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin() && isValidId(uid) && isValidAdmin(incoming());
+    }
+
+    // Configuration Collection
+    match /config/{configId} {
+      allow get: if isVerified();
+      allow list: if isVerified();
+      allow create, update: if isAdmin() && isValidId(configId) && isValidSchool(incoming());
+      allow delete: if false; // School configuration cannot be arbitrarily deleted
+    }
+
+    // Point Categories Collection
+    match /categories/{categoryId} {
+      allow get: if isVerified();
+      allow list: if isVerified();
+      allow create, update: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming());
+      allow delete: if isAdmin() && isValidId(categoryId);
+    }
+
+    // Students Collection
+    match /students/{studentId} {
+      allow get: if isVerified();
+      allow list: if isVerified();
+      allow create: if isAdmin() && isValidId(studentId) && isValidStudent(incoming());
+      allow update: if isAdmin() && isValidId(studentId) && isValidStudent(incoming());
+      allow delete: if isAdmin() && isValidId(studentId);
+
+      // Student Point Records Subcollection
+      match /points/{pointId} {
+        allow get: if isVerified();
+        allow list: if isVerified();
+        allow create: if isAdmin() && isValidId(pointId) &&
+          exists(/databases/$(database)/documents/students/$(studentId)) &&
+          isValidPoint(incoming());
+        allow update: if isAdmin() && isValidId(pointId) &&
+          exists(/databases/$(database)/documents/students/$(studentId)) &&
+          isValidPoint(incoming());
+        allow delete: if isAdmin() && isValidId(pointId);
+      }
+    }
+
+    // Counseling Records Collection
+    match /counseling/{counselingId} {
+      allow get: if isVerified();
+      allow list: if isVerified();
+      allow create: if isAdmin() && isValidId(counselingId) && isValidCounseling(incoming());
+      allow update: if isAdmin() && isValidId(counselingId) && isValidCounseling(incoming());
+      allow delete: if isAdmin() && isValidId(counselingId);
+    }
+  }
+}
